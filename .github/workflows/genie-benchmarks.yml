@@ -1,0 +1,49 @@
+# On demand: run the benchmarks of the deployed agent in one environment, without deploying.
+# Actions > Genie Agent benchmarks > Run workflow, then pick the environment.
+# Same report, failure email and exit code as the gate in the other workflows.
+name: Genie Agent benchmarks
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment to test
+        type: choice
+        options: [prod, staging, dev]
+        default: prod
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  benchmarks:
+    name: Genie benchmarks (${{ inputs.environment }})
+    if: vars.GENIE_CICD_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    env:
+      DATABRICKS_AUTH_TYPE: github-oidc
+      DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+      DATABRICKS_CLIENT_ID: ${{ vars.DATABRICKS_CLIENT_ID }}
+      BUNDLE_VAR_warehouse_id: ${{ vars.WAREHOUSE_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@v1.26.0
+      - name: Environment settings (alert email required; catalog and schema optional)
+        env:
+          ALERT_EMAIL: ${{ secrets.GENIE_ALERT_EMAIL }}
+          CATALOG: ${{ vars.CATALOG }}
+          SCHEMA: ${{ vars.SCHEMA }}
+        run: |
+          if [[ "$ALERT_EMAIL" != *@* ]]; then
+            echo "::error::Set the repository secret GENIE_ALERT_EMAIL to the address that gets the email when the benchmark gate fails."
+            exit 1
+          fi
+          echo "BUNDLE_VAR_alert_email=$ALERT_EMAIL" >> "$GITHUB_ENV"
+          if [ -n "$CATALOG" ]; then echo "BUNDLE_VAR_catalog=$CATALOG" >> "$GITHUB_ENV"; fi
+          if [ -n "$SCHEMA" ]; then echo "BUNDLE_VAR_schema=$SCHEMA" >> "$GITHUB_ENV"; fi
+      - name: Run benchmarks (fails when accuracy is not above the threshold)
+        env:
+          TARGET: ${{ inputs.environment }}
+        run: scripts/run_gate.sh "$TARGET"

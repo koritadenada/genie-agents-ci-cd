@@ -1,0 +1,41 @@
+# Benchmark gate: runs the agent's benchmarks and fails when accuracy is not above var.min_accuracy.
+# A failed run prints the failing questions and their reasons, and Databricks emails var.alert_email.
+# CI runs it after each deployment (scripts/run_gate.sh). It has no schedule: run it on demand with the
+# "Genie Agent benchmarks" workflow, scripts/run_gate.sh <target>, or Run now on the job in the workspace.
+# On demand is a choice, not a limit: to run it automatically (for example weekly in prod, to catch accuracy
+# drift as data changes), add a schedule to the target in databricks.yml, as shown in the README.
+resources:
+  jobs:
+    benchmark_gate:
+      name: Genie benchmark gate (${bundle.target})
+      max_concurrent_runs: 1
+      timeout_seconds: 3600
+      permissions:
+        - level: CAN_MANAGE
+          group_name: ${var.owners_group}
+      email_notifications:
+        on_failure:
+          - ${var.alert_email}
+      parameters:
+        - name: space_id
+          default: ${resources.genie_spaces.sales_agent.id}
+        - name: min_accuracy
+          default: ${var.min_accuracy}
+        - name: target
+          default: ${bundle.target}
+      tasks:
+        - task_key: run_benchmarks
+          environment_key: default
+          spark_python_task:
+            python_file: ../src/benchmark_gate.py
+            parameters:
+              - --space-id
+              - "{{job.parameters.space_id}}"
+              - --min-accuracy
+              - "{{job.parameters.min_accuracy}}"
+              - --target
+              - "{{job.parameters.target}}"
+      environments:
+        - environment_key: default
+          spec:
+            environment_version: "4"

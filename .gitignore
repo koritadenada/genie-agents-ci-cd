@@ -1,0 +1,7 @@
+.databricks/
+__pycache__/
+*.pyc
+.venv/
+local.mk
+.DS_Store
+plan-*.json
