@@ -5,3 +5,4 @@ __pycache__/
 local.mk
 .DS_Store
 plan-*.json
+docs/*.png

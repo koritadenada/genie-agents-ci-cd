@@ -8,16 +8,9 @@ Copy this repository, point it at your workspace and your agent, and the pipelin
 [Declarative Automation Bundles](https://docs.databricks.com/aws/en/dev-tools/bundles/) and the Databricks CLI, and runs
 on Databricks on AWS, Azure and Google Cloud.
 
-```mermaid
-flowchart LR
-  PR[Pull request] --> T[Unit tests] --> D1[Deploy to dev] --> G1{Benchmarks<br/>above 80%?}
-  G1 -- no --> X1[Print reasons<br/>email the team<br/>check fails]
-  G1 -- yes --> OK1[Check passes, PR can merge]
-  M[Merge to main] --> D2[Plan and deploy<br/>to staging] --> G2{Benchmarks<br/>above 80%?}
-  G2 -- no --> X2[Print reasons<br/>email the team<br/>pipeline stops]
-  G2 -- yes --> P[Plan and deploy<br/>to prod] --> C[Benchmark check<br/>on prod data]
-  R[Run workflow, on demand] --> G3{Benchmarks in<br/>dev, staging or prod}
-```
+![Genie Agents CI/CD: pull request to dev, release to staging with the benchmark gate, promotion to prod](docs/cicd-pipeline.gif)
+
+The same diagram, interactive: open [`docs/cicd-pipeline.html`](docs/cicd-pipeline.html) in a browser (click a tab to open a part).
 
 ## What is in here
 
@@ -31,6 +24,7 @@ flowchart LR
 | `scripts/plan.sh` | Writes the deployment plan for a target to `plan-<target>.json` and lists the planned changes. |
 | `scripts/pull_agent.py` | Pulls changes made to your dev agent in the UI back into `sales_agent.genie.yml`. |
 | `scripts/seed_demo_data.py` | Example only: creates the `customers` and `orders` tables from `samples.tpch`. |
+| `docs/` | The animated pipeline diagram (`cicd-pipeline.html`, built from `cicd-pipeline_template.html`) and its GIF. |
 | `tests/` | Unit tests for the gate decision and the pull normalization (`pytest`). |
 | `.github/workflows/genie-pr.yml` | Pull request: unit tests, deploy to dev, run the benchmarks. |
 | `.github/workflows/genie-release.yml` | Merge to `main`: plan and deploy to staging, run the gate, then plan and deploy to prod and check it on prod data. |
