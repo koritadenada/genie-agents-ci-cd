@@ -52,6 +52,7 @@ resources:
                   Revenue means SUM(orders.order_amount); average order value means AVG(orders.order_amount).
                   When no year is given, use 2025, the latest full year, and say so.
                   Costs, margins and forecasts are out of scope: say so instead of guessing.
+                  Round money amounts to whole units in answers.
           example_question_sqls:
             - id: "d0000000000000000000000000000001"
               question: ["What was revenue by region in 2024?"]
